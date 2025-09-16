@@ -1,0 +1,47 @@
+CREATE OR ALTER PROCEDURE ImprimrProductosCategoria
+    @CategoriaID INT
+AS
+BEGIN
+    SET ANSI_WARNINGS OFF;
+
+    DECLARE @contador INT;
+    DECLARE @ProductoID INT; 
+	DECLARE @Nombre NVARCHAR(100);
+    DECLARE @Precio DECIMAL(10,2);
+    DECLARE @total DECIMAL(12,2) = 0;
+
+    DECLARE cursor_productos CURSOR FOR
+        SELECT ProductoID, Nombre, PrecioUnitario
+        FROM Producto
+        WHERE CategoriaID = @CategoriaID
+        ORDER BY ProductoID ASC;
+
+    SELECT @contador = COUNT(*)
+    FROM Producto
+    WHERE CategoriaID = @CategoriaID;
+
+    IF @contador = 0
+    BEGIN
+        PRINT 'No hay productos para la categoría ' + CAST(@CategoriaID AS VARCHAR(10));
+        RETURN;
+    END
+
+    OPEN cursor_productos;
+
+    WHILE @contador > 0
+    BEGIN
+        FETCH NEXT FROM cursor_productos INTO @ProductoID, @Nombre, @Precio;
+        PRINT('Producto ID: ' + CAST(@ProductoID AS VARCHAR(10)) + ' - Nombre: ' + @Nombre + ' -> Precio: $' + CAST(@Precio AS VARCHAR(12)));
+        SET @total = @total + @Precio;
+        SET @contador = @contador - 1;
+    END
+
+    PRINT('------------------------');
+    PRINT('TOTAL SUMA PRECIOS: $' + CAST(@total AS VARCHAR(12)));
+
+    CLOSE cursor_productos;
+    DEALLOCATE cursor_productos;
+END;
+
+-- Ejemplo de ejecución:
+EXEC ImprimrProductosCategoria 2;
