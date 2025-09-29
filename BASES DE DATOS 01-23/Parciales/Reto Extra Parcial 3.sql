@@ -2,7 +2,6 @@
 *
 *	DESARROLLO DE EJERCICIO EXTRA PARCIAL 3
 *	DESAROLLADO POR: Diego Eduardo Castro Quintanilla CARNET 00117322 SECCION 01
-*	COMPAÑERO: Cristofer Ricardo Diaz Alfaro CARNET 00071222 SECCION 01
 *
 */
 
@@ -57,7 +56,7 @@ BEGIN
 	END CATCH
 
 	-- Utilizo el SELECT INTO para crear una tabla auxiliar que servira para mostrar la consulta mas adelante
-	SELECT R.id 'Id reserva', R.checkin, R.checkout, R.id_habitacion 'Id de habitacion', '25' AS 'Número de caso' 
+	SELECT R.id 'Id reserva', R.checkin, R.checkout, R.id_habitacion 'Id de habitacion', '25' AS 'NÃºmero de caso' 
 	INTO auxReserva
 	FROM RESERVA R, idReservasSobrepuestas IR
 	WHERE R.id = IR.id_reserva
@@ -81,10 +80,10 @@ BEGIN
 				WHILE @@FETCH_STATUS = 0
 				BEGIN
 				IF @habitacion_contador = @aux_habitacion AND @aux_id != 113
-					UPDATE auxReserva SET auxReserva.[Número de caso] = @contador_caso WHERE [Id reserva] =  @aux_id ;
+					UPDATE auxReserva SET auxReserva.[NÃºmero de caso] = @contador_caso WHERE [Id reserva] =  @aux_id ;
 				ELSE
 					SET @contador_caso = @contador_caso + 1;
-					UPDATE auxReserva SET auxReserva.[Número de caso] = @contador_caso WHERE [Id reserva] =  @aux_id ;
+					UPDATE auxReserva SET auxReserva.[NÃºmero de caso] = @contador_caso WHERE [Id reserva] =  @aux_id ;
 					SET @habitacion_contador = @aux_habitacion; 
 					FETCH NEXT FROM cursor2 INTO @aux_id, @aux_checkin, @aux_checkout, @aux_habitacion, @aux_caso;
 				END;
