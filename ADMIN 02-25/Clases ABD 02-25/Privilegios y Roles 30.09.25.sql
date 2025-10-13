@@ -47,9 +47,8 @@ DENY DELETE ON dbo.Clientes TO Usuario1;
 -- ROLES PERSONALIZADOS (SON LOS QUE HACEMOS NOSOTROS MANUALMENTE)
 -- Solo existe en la base de datos donde estas cuando lo creas 
 
--------------------------------------------------------
 -- CREAR ROL PERSONALIZADO
--------------------------------------------------------
+
 CREATE ROLE rol_reportes;
 
 -- Otorgar permisos al rol
@@ -69,9 +68,8 @@ WITH REPLACE;
 EXEC sp_configure 'contained database authentication', 1;
 RECONFIGURE;
     
--------------------------------------------------------
 -- ROLES PREDEFINIDOS
--------------------------------------------------------
+
 -- Crear login en el servidor
 CREATE LOGIN user_reportes WITH PASSWORD = 'Reporte123$';
 
@@ -83,9 +81,8 @@ CREATE USER user_reportes FOR LOGIN user_reportes;
 ALTER ROLE db_datareader ADD MEMBER user_reportes;
 
 
--------------------------------------------------------
 -- PRUEBA DE CONTEXTO CON USUARIO user_reportes
--------------------------------------------------------
+
 -- Cambiar contexto al usuario
 EXECUTE AS USER = 'user_reportes';
 
@@ -102,9 +99,8 @@ REVERT;
 -- CONSULTAR CON QUE USUARIO ESTAMOS CONECTADOS 
 SELECT CURRENT_USER;
 
--------------------------------------------------------
 -- ROLES PERSONALIZADOS
--------------------------------------------------------
+
 -- Crear rol y asignar permisos
 CREATE ROLE rol_operaciones;
 GRANT INSERT, UPDATE ON dbo.Ventas TO rol_operaciones;
@@ -118,10 +114,8 @@ CREATE USER user_operador FOR LOGIN user_operador;
 -- Agregar usuario al rol personalizado
 ALTER ROLE rol_operaciones ADD MEMBER user_operador;
 
-
--------------------------------------------------------
 -- PRUEBA DE CONTEXTO CON USUARIO user_operador
--------------------------------------------------------
+
 -- Cambiar contexto al usuario
 EXECUTE AS USER = 'user_operador';
 

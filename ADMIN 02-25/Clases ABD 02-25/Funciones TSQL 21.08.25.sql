@@ -1,4 +1,4 @@
-
+-- Administracion de bases de datos
 -- Clase 21/08/2025
 
 CREATE OR ALTER FUNCTION dbo.VerificarHotel 

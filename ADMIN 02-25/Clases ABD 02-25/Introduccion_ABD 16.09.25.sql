@@ -2,15 +2,15 @@
 
 /*
 master:
-Es la base de datos más importante de SQL Server, ya que contiene toda la información a nivel de sistema como configuraciones del servidor, detalles de inicio de sesión, rutas de archivos físicos y referencias a todas las demás bases de datos. Si esta base se daña, 
-el motor de SQL Server no podrá arrancar correctamente.
+Es la base de datos mas importante de SQL Server, ya que contiene toda la informaciï¿½n a nivel de sistema como configuraciones del servidor, detalles de inicio de sesiï¿½n, rutas de archivos fï¿½sicos y referencias a todas las demï¿½s bases de datos. Si esta base se daï¿½a, 
+el motor de SQL Server no podra arrancar correctamente.
 
 model:
-Sirve como plantilla para la creación de nuevas bases de datos; 
-todas las bases que se creen después de instalar SQL Server tomarán su configuración base desde model, incluyendo opciones como collation, tamaño inicial, y configuraciones de recuperación. No tiene efecto retroactivo sobre bases ya existentes.
+Sirve como plantilla para la creacion de nuevas bases de datos; 
+todas las bases que se creen despues de instalar SQL Server tomarï¿½n su configuraciï¿½n base desde model, incluyendo opciones como collation, tamaï¿½o inicial, y configuraciones de recuperaciï¿½n. No tiene efecto retroactivo sobre bases ya existentes.
 
 msdb:
-Almacena información relacionada con las tareas automatizadas del servidor, como trabajos programados, 
+Almacena informacion relacionada con las tareas automatizadas del servidor, como trabajos programados, 
 planes de mantenimiento, alertas, operadores y el historial de respaldos y restauraciones. 
 Es fundamental para el funcionamiento del SQL Server Agent y otras operaciones administrativas.
 
