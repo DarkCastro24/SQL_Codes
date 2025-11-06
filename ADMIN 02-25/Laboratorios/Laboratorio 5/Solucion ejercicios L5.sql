@@ -1,16 +1,21 @@
 /*
 LABORATORIO 5 - COPIAS DE SEGURIDAD EN SQL SERVER
 BASE DE DATOS: PUBS
-FECHA DE CREACIÓN: 04/11/2025
+FECHA DE CREACION: 04/11/2025
 
-Este laboratorio contiene TRES CLAVES DE EJERCICIOS PRÁCTICOS que abordan
-los diferentes tipos de restauración disponibles en SQL Server. Cada clave se 
+Este laboratorio contiene TRES CLAVES DE EJERCICIOS PRACTICOS que abordan
+los diferentes tipos de restauracion disponibles en SQL Server. Cada clave se 
 enfoca en un conjunto distinto de tablas del esquema PUBS.
 
-Cada ejercicio contempla los tres tipos de restauración:
-1) Restauración Completa (FULL)
-2) Restauración Diferencial (DIFFERENTIAL)
-3) Restauración Punto en Tiempo (LOG)
+ACLARACION IMPORTANTE: CADA ESTUDIANTE DESARROLLARA SU SOLUCION A SU MANERA 
+ESTO SE DISEÃ‘O CON EL OBJETIVO QUE CADA ARCHIVO QUE SUBAN SEA DIFERENTE Y EVITAR 
+LA COPIA/PLAGIO ESA ES LA RAZON POR LA QUE UNICAMENTE SE DAN LAS INDICACIONES Y EL 
+PATRON QUE DEBEN SEGUIR PERO NO LAS SENTENCIAS EXACTAS QUE VAN A OCUPAR.
+
+Cada ejercicio contempla los tres tipos de restauracion:
+1) Restauracion Completa (FULL)
+2) Restauracion Diferencial (DIFFERENTIAL)
+3) Restauracion Punto en Tiempo (LOG)
 
 PRERREQUISITOS:
 - Base de datos PUBS instalada y funcional.
@@ -18,9 +23,9 @@ PRERREQUISITOS:
 - Permisos administrativos para ejecutar BACKUP y RESTORE.
 
 IMPORTANTE:
-- Los escenarios de pérdida de datos deben simularse mediante UPDATE o DELETE.
+- Los escenarios de perdida de datos deben simularse mediante UPDATE o DELETE.
 - Los comandos deben reflejar cambios evidentes en las tablas afectadas.
-- Al inicio de tu entregable indica tu nombre completo y número de carnet.
+- Al inicio de tu entregable indica tu nombre completo y numero de carnet.
 
 ENTREGABLES:
 1) Documento Word o PDF con capturas de todo el proceso.
@@ -30,15 +35,15 @@ ENTREGABLES:
 USE master;
 GO
 
-/* CLAVE 1: Restauración con tablas AUTHORS y TITLES */
+/* CLAVE 1: Restauracion con tablas AUTHORS y TITLES */
 
 /*
-Diseñe y ejecute una estrategia de recuperación completa para las tablas AUTHORS y TITLES.
-Simule distintos escenarios de pérdida de datos y recupere la información aplicando, en orden,
-una restauración FULL, una restauración DIFFERENTIAL y una restauración mediante LOG (PITR).
+DiseÃ±e y ejecute una estrategia de recuperacion completa para las tablas AUTHORS y TITLES.
+Simule distintos escenarios de perdida de datos y recupere la informacion aplicando, en orden,
+una restauracion FULL, una restauracion DIFFERENTIAL y una restauracion mediante LOG (PITR).
 */
 
--- CONFIGURACIÓN INICIAL 
+-- CONFIGURACION INICIAL 
 ALTER DATABASE pubs SET RECOVERY FULL;
 GO
 
@@ -48,18 +53,18 @@ TO DISK = 'C:\backups\pubs_CLAVE1_FULL.bak'
 WITH INIT, COMPRESSION, STATS = 5;
 GO
 
--- ESCENARIO 1: RESTAURACIÓN FULL (simular daño)
+-- ESCENARIO 1: RESTAURACION FULL (simular daÃ±o)
 USE pubs;
 
 UPDATE authors SET au_lname = 'CORRUPTO', contract = 0;
 UPDATE titles SET price = 0, royalty = 0;
 DELETE FROM titleauthor WHERE au_id IN (SELECT TOP 5 au_id FROM authors);
 
--- Verificación del daño
+-- Verificacion del daÃ±o
 SELECT COUNT(*) AS autores_corruptos FROM authors WHERE au_lname = 'CORRUPTO';
 SELECT COUNT(*) AS titulos_cero FROM titles WHERE price = 0;
 
--- Restauración FULL
+-- Restauracion FULL
 USE master;
 
 ALTER DATABASE pubs SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
@@ -70,7 +75,7 @@ ALTER DATABASE pubs SET MULTI_USER;
 
 GO
 
--- Verificación post-FULL
+-- Verificacion post-FULL
 USE pubs;
 
 SELECT COUNT(*) AS autores_recuperados FROM authors WHERE au_lname != 'CORRUPTO';
@@ -79,13 +84,13 @@ SELECT COUNT(*) AS relaciones_recuperadas FROM titleauthor;
 
 GO
 
--- PREPARACIÓN PARA DIFFERENTIAL Y LOG 
+-- PREPARACION PARA DIFFERENTIAL Y LOG 
 INSERT INTO authors (au_id, au_lname, au_fname, phone, contract)
 VALUES ('111-11-1111', 'Gonzalez', 'Ana', '555-1111', 1),
        ('222-22-2222', 'Martinez', 'Luis', '555-2222', 1);
 
 INSERT INTO titles (title_id, title, type, pub_id, price, pubdate)
-VALUES ('CL1001', 'Guía Avanzada SQL', 'business', '1389', 45.99, GETDATE());
+VALUES ('CL1001', 'Guia Avanzada SQL', 'business', '1389', 45.99, GETDATE());
 
 INSERT INTO titleauthor (au_id, title_id, au_ord, royaltyper)
 VALUES ('111-11-1111', 'CL1001', 1, 60),
@@ -116,14 +121,14 @@ TO DISK = 'C:\backups\pubs_CLAVE1_LOG.trn'
 WITH INIT, COMPRESSION, STATS = 5;
 GO
 
--- ESCENARIO 2: RESTAURACIÓN DIFFERENTIAL (simular pérdida de lo recién agregado)
+-- ESCENARIO 2: RESTAURACION DIFFERENTIAL (simular perdida de lo recien agregado)
 USE pubs;
 
 DELETE FROM titleauthor WHERE title_id = 'CL1001';
 DELETE FROM titles WHERE title_id = 'CL1001';
 DELETE FROM authors WHERE au_id IN ('111-11-1111', '222-22-2222');
 
--- Restauración DIFFERENTIAL
+-- Restauraciï¿½n DIFFERENTIAL
 USE master;
 
 ALTER DATABASE pubs SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
@@ -136,7 +141,7 @@ WITH RECOVERY, STATS = 5;
 ALTER DATABASE pubs SET MULTI_USER;
 GO
 
--- Verificación post-DIFFERENTIAL
+-- Verificacion post-DIFFERENTIAL
 USE pubs;
 
 SELECT * FROM authors WHERE au_id IN ('111-11-1111', '222-22-2222');
@@ -144,13 +149,13 @@ SELECT * FROM titles WHERE title_id = 'CL1001';
 SELECT * FROM titleauthor WHERE title_id = 'CL1001';
 GO
 
--- ESCENARIO 3: RESTAURACIÓN LOG (PITR)
+-- ESCENARIO 3: RESTAURACION LOG (PITR)
 USE pubs;
 
 DELETE FROM authors WHERE au_id = '333-33-3333';
 UPDATE authors SET contract = 0 WHERE state = 'CA';
 
--- Restauración LOG
+-- Restauracion LOG
 USE master;
 
 ALTER DATABASE pubs SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
@@ -166,7 +171,7 @@ WITH RECOVERY, STATS = 5;
 ALTER DATABASE pubs SET MULTI_USER;
 GO
 
--- Verificación post-LOG
+-- Verificacion post-LOG
 USE pubs;
 
 SELECT * FROM authors WHERE au_id = '333-33-3333';
@@ -174,16 +179,15 @@ SELECT COUNT(*) AS contratos_CA FROM authors WHERE state = 'CA' AND contract = 1
 SELECT title_id, price FROM titles WHERE type = 'popular_comp' AND price > 20;
 GO
 
-
-/* CLAVE 2: Restauración con tablas SALES y STORES */
+/* CLAVE 2: Restauracion con tablas SALES y STORES */
 
 /*
-Implemente un plan integral de recuperación para las tablas SALES y STORES.
-Genere evidencia de pérdida de información (ventas y tiendas) y restáurela aplicando
-los tres tipos de restauración: FULL, DIFFERENTIAL y LOG.
+Implemente un plan integral de recuperacion para las tablas SALES y STORES.
+Genere evidencia de perdida de informacion (ventas y tiendas) y restaurela aplicando
+los tres tipos de restauracion: FULL, DIFFERENTIAL y LOG.
 */
 
--- CONFIGURACIÓN INICIAL
+-- CONFIGURACION INICIAL
 USE master;
 
 ALTER DATABASE pubs SET RECOVERY FULL;
@@ -195,19 +199,19 @@ TO DISK = 'C:\backups\pubs_CLAVE2_FULL.bak'
 WITH INIT, COMPRESSION, STATS = 5;
 GO
 
--- ESCENARIO 1: RESTAURACIÓN FULL (simular daño)
+-- ESCENARIO 1: RESTAURACION FULL (simular dano)
 USE pubs;
 
 UPDATE stores SET stor_name = 'TIENDA CORRUPTA';
 DELETE FROM sales WHERE qty > 20;
 UPDATE sales SET payterms = 'CORRUPTO' WHERE ord_num LIKE 'P%';
 
--- Verificación del daño
+-- Verificacion del dano
 SELECT COUNT(*) AS tiendas_corruptas FROM stores WHERE stor_name = 'TIENDA CORRUPTA';
 SELECT COUNT(*) AS ventas_corruptas FROM sales WHERE payterms = 'CORRUPTO';
 SELECT COUNT(*) AS ventas_grandes_borradas FROM sales WHERE qty > 20; -- 0 tras el DELETE
 
--- Restauración FULL
+-- Restauracion FULL
 USE master;
 
 ALTER DATABASE pubs SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
@@ -217,14 +221,14 @@ WITH REPLACE, RECOVERY, STATS = 5;
 ALTER DATABASE pubs SET MULTI_USER;
 GO
 
--- Verificación post-FULL
+-- Verificacion post-FULL
 USE pubs;
 
 SELECT COUNT(*) AS tiendas_recuperadas FROM stores WHERE stor_name != 'TIENDA CORRUPTA';
 SELECT COUNT(*) AS ventas_sanas FROM sales WHERE payterms != 'CORRUPTO';
 GO
 
--- PREPARACIÓN PARA DIFFERENTIAL Y LOG
+-- PREPARACION PARA DIFFERENTIAL Y LOG
 USE pubs;
 
 INSERT INTO stores (stor_id, stor_name, stor_address, city, state, zip)
@@ -249,7 +253,7 @@ USE pubs;
 UPDATE sales SET qty = qty * 2 WHERE stor_id IN ('6380', '7066');
 INSERT INTO sales (stor_id, ord_num, ord_date, qty, payterms, title_id)
 VALUES ('7131', 'LOGORDER1', GETDATE(), 15, 'Net 30', 'PC1035');
-UPDATE stores SET stor_address = 'Dirección Actualizada' WHERE stor_id = '7131';
+UPDATE stores SET stor_address = 'Direccion Actualizada' WHERE stor_id = '7131';
 
 -- BACKUP LOG
 USE master;
@@ -259,13 +263,13 @@ TO DISK = 'C:\backups\pubs_CLAVE2_LOG.trn'
 WITH INIT, COMPRESSION, STATS = 5;
 GO
 
--- ESCENARIO 2: RESTAURACIÓN DIFFERENTIAL (simular pérdida de lo recién agregado)
+-- ESCENARIO 2: RESTAURACION DIFFERENTIAL (simular perdida de lo recien agregado)
 USE pubs;
 
 DELETE FROM sales WHERE ord_num IN ('10001', '10002');
 DELETE FROM stores WHERE stor_id IN ('9000', '9001');
 
--- Restauración DIFFERENTIAL
+-- Restauracion DIFFERENTIAL
 USE master;
 
 ALTER DATABASE pubs SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
@@ -278,21 +282,21 @@ WITH RECOVERY, STATS = 5;
 ALTER DATABASE pubs SET MULTI_USER;
 GO
 
--- Verificación post-DIFFERENTIAL
+-- Verificacion post-DIFFERENTIAL
 USE pubs;
 
 SELECT * FROM stores WHERE stor_id IN ('9000', '9001');
 SELECT * FROM sales WHERE ord_num IN ('10001', '10002');
 GO
 
--- ESCENARIO 3: RESTAURACIÓN LOG (PITR)
+-- ESCENARIO 3: RESTAURACION LOG (PITR)
 USE pubs;
 
 DELETE FROM sales WHERE ord_num = '10001';
 UPDATE sales SET qty = 1 WHERE stor_id IN ('9000', '9001');
-UPDATE stores SET stor_address = 'DIRECCIÓN ERRÓNEA' WHERE stor_id = '9000';
+UPDATE stores SET stor_address = 'DIRECCION ERRONEA' WHERE stor_id = '9000';
 
--- Restauración LOG
+-- Restauracion LOG
 USE master;
 
 ALTER DATABASE pubs SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
@@ -308,24 +312,24 @@ WITH RECOVERY, STATS = 5;
 ALTER DATABASE pubs SET MULTI_USER;
 GO
 
--- Verificación post-LOG
+-- Verificacion post-LOG
 USE pubs;
 
 SELECT * FROM sales WHERE ord_num = '6871';
 SELECT stor_id, qty FROM sales WHERE stor_id IN ('6380', '7066') AND qty > 10;
-SELECT stor_id, stor_address FROM stores WHERE stor_id = '7131' AND stor_address = 'Dirección Actualizada';
+SELECT stor_id, stor_address FROM stores WHERE stor_id = '7131' AND stor_address = 'Direccion Actualizada';
 
 GO
 
-/* CLAVE 3: Restauración con tablas PUBLISHERS y ROYSCHED */
+/* CLAVE 3: Restauracion con tablas PUBLISHERS y ROYSCHED */
 
 /*
-Elabore una estrategia de recuperación para las tablas PUBLISHERS y ROYSCHED.
-Simule incidentes de modificación y eliminación, y restablezca la información
-aplicando los tres tipos de restauración: FULL, DIFFERENTIAL y LOG.
+Elabore una estrategia de recuperacion para las tablas PUBLISHERS y ROYSCHED.
+Simule incidentes de modificacion y eliminacion, y restablezca la informacion
+aplicando los tres tipos de restauracion: FULL, DIFFERENTIAL y LOG.
 */
 
--- CONFIGURACIÓN INICIAL
+-- CONFIGURACION INICIAL
 USE master;
 ALTER DATABASE pubs SET RECOVERY FULL;
 GO
@@ -336,18 +340,18 @@ TO DISK = 'C:\backups\pubs_CLAVE3_FULL.bak'
 WITH INIT, COMPRESSION, STATS = 5;
 GO
 
--- ESCENARIO 1: RESTAURACIÓN FULL (simular daño)
+-- ESCENARIO 1: RESTAURACION FULL (simular dano)
 USE pubs;
 
 UPDATE publishers SET pub_name = 'EDITORIAL CORRUPTA';
 DELETE FROM roysched WHERE royalty > 15;
 UPDATE roysched SET royalty = 0 WHERE lorange = 0;
 
--- Verificación del daño
+-- Verificacion del dano
 SELECT COUNT(*) AS editoriales_corruptas FROM publishers WHERE pub_name = 'EDITORIAL CORRUPTA';
 SELECT COUNT(*) AS royalty_cero FROM roysched WHERE royalty = 0;
 
--- Restauración FULL
+-- Restauracion FULL
 USE master;
 
 ALTER DATABASE pubs SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
@@ -357,14 +361,14 @@ WITH REPLACE, RECOVERY, STATS = 5;
 ALTER DATABASE pubs SET MULTI_USER;
 GO
 
--- Verificación post-FULL
+-- Verificacion post-FULL
 USE pubs;
 
 SELECT COUNT(*) AS editoriales_recuperadas FROM publishers WHERE pub_name != 'EDITORIAL CORRUPTA';
 SELECT COUNT(*) AS royalty_alto FROM roysched WHERE royalty > 15;
 GO
 
--- PREPARACIÓN PARA DIFFERENTIAL Y LOG
+-- PREPARACION PARA DIFFERENTIAL Y LOG
 USE pubs;
 
 INSERT INTO publishers (pub_id, pub_name, city, state, country)
@@ -383,7 +387,7 @@ TO DISK = 'C:\backups\pubs_CLAVE3_DIFF.bak'
 WITH DIFFERENTIAL, COMPRESSION, STATS = 5;
 GO
 
--- Cambios para LOG (se registrarán en el backup de log)
+-- Cambios para LOG (se registraran en el backup de log)
 USE pubs;
 
 UPDATE publishers SET city = 'CIUDAD ACTUALIZADA' WHERE pub_id IN ('0877', '1389');
@@ -399,15 +403,15 @@ TO DISK = 'C:\backups\pubs_CLAVE3_LOG.trn'
 WITH INIT, COMPRESSION, STATS = 5;
 GO
 
--- ESCENARIO 2: RESTAURACIÓN DIFFERENTIAL (simular pérdida de lo recién agregado al DIFF)
+-- ESCENARIO 2: RESTAURACION DIFFERENTIAL (simular perdida de lo recien agregado al DIFF)
 USE pubs;
 
--- Aquí eliminamos EXACTAMENTE lo que agregamos antes del DIFF:
+-- Aqui eliminamos EXACTAMENTE lo que agregamos antes del DIFF:
 DELETE FROM publishers WHERE pub_id IN ('9902', '9903');
 DELETE FROM roysched WHERE (title_id = 'BU1032' AND royalty = 20)
                      OR  (title_id = 'PS2091' AND royalty = 18);
 
--- Restauración DIFFERENTIAL
+-- Restauracion DIFFERENTIAL
 USE master;
 
 ALTER DATABASE pubs SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
@@ -421,7 +425,7 @@ WITH RECOVERY, STATS = 5;
 ALTER DATABASE pubs SET MULTI_USER;
 GO
 
--- Verificación post-DIFFERENTIAL (coherente con lo insertado antes del DIFF)
+-- Verificacion post-DIFFERENTIAL (coherente con lo insertado antes del DIFF)
 USE pubs;
 
 SELECT * FROM publishers WHERE pub_id IN ('9902', '9903');
@@ -429,15 +433,15 @@ SELECT * FROM roysched WHERE (title_id = 'BU1032' AND royalty = 20)
                       OR  (title_id = 'PS2091' AND royalty = 18);
 GO
 
--- ESCENARIO 3: RESTAURACIÓN LOG (PITR sobre cambios del LOG)
+-- ESCENARIO 3: RESTAURACION LOG (PITR sobre cambios del LOG)
 USE pubs;
 
--- Dañamos SOLO lo que fue parte de los cambios de LOG:
+-- Danamos SOLO lo que fue parte de los cambios de LOG:
 DELETE FROM roysched WHERE title_id = 'PC1035' AND royalty = 16;  -- insertado en LOG
-UPDATE publishers SET city = 'CIUDAD ERRÓNEA' WHERE pub_id IN ('0877', '1389'); -- sobreescribe lo actualizado en LOG
+UPDATE publishers SET city = 'CIUDAD ERRONEA' WHERE pub_id IN ('0877', '1389'); -- sobreescribe lo actualizado en LOG
 UPDATE roysched SET royalty = 10 WHERE title_id = 'PS2106';       -- pisa el +2 hecho en LOG
 
--- Restauración LOG
+-- Restauracion LOG
 USE master;
 
 ALTER DATABASE pubs SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
@@ -454,7 +458,7 @@ WITH RECOVERY, STATS = 5;
 ALTER DATABASE pubs SET MULTI_USER;
 GO
 
--- Verificación post-LOG (debe reflejar el estado "bueno" del LOG)
+-- Verificacion post-LOG (debe reflejar el estado "bueno" del LOG)
 USE pubs;
 
 SELECT * 
@@ -469,5 +473,3 @@ SELECT title_id, royalty
 FROM roysched 
 WHERE title_id = 'PS2106' AND royalty > 10;  -- debe ser >10 tras el +2 del LOG
 GO
-
-
