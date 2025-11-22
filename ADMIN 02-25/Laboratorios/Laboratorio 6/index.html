@@ -3,11 +3,17 @@
   <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes" name="viewport" />
-    <title>Laboratorio 6 — Auditoría en SQL Server</title>
+    <title>Laboratorio 06 — Auditoría de Bases de Datos en SQL Server</title>
+
+    <!-- Google Fonts and Material Icons -->
     <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+
+    <!-- Codelab Styles -->
     <link href="https://storage.googleapis.com/claat-public/codelab-elements.css" rel="stylesheet" />
+
     <style>
+      /* Plantilla: plantilla_laboratorio */
       .important-box {
         background-color: #e6f4ea;
         border-left: 5px solid #34a853;
@@ -15,628 +21,192 @@
         margin: 16px 0;
         border-radius: 4px;
       }
-      pre { white-space: pre-wrap; }
       .code-container { position: relative; }
       .copy-btn {
-        position: absolute; top: 6px; right: 6px;
+        position: absolute;
+        top: 6px; right: 6px;
         background: transparent; color: white;
         border: transparent; padding: 4px 8px; font-size: 12px;
         border-radius: 3px; cursor: pointer;
       }
+      pre { white-space: pre-wrap; }
     </style>
   </head>
-
   <body>
-    <google-codelab id="lab-sqlserver-l6" title="Laboratorio 6 — Auditoría en SQL Server" environment="web">
+    <google-codelab
+      id="lab-sqlserver-auditoria"
+      title="Auditoría de Bases de Datos en SQL Server"
+      environment="web">
 
-      <!-- 1. Introducción -->
+      <!-- Título general del documento (Heading 2 en Word): Auditoría de Bases de Datos -->
+      <!-- 1. ¿Qué es una auditoría en bases de datos? -->
       <google-codelab-step label="Introducción" duration="0">
+        <h3>¿Qué es una auditoría en bases de datos?</h3>
         <p>
-          En este laboratorio trabajaremos con la funcionalidad de 
-          <b>Auditoría en SQL Server</b>, una característica que permite
-          <b>registrar acciones</b> realizadas sobre el servidor o sobre 
-          objetos específicos de la base de datos (tablas, vistas, etc.).
+          Una auditoría en SQL Server sirve para registrar las <b>acciones que realizan los usuarios</b> en el servidor o en una base de datos.
+          Ayuda a detectar cambios no autorizados, accesos indebidos o errores, y permite saber quién hizo qué, cuándo y desde dónde.
         </p>
 
-        <p><b>¿Qué es una auditoría?</b></p>
-        <p>
-          A grandes rasgos, una auditoría en SQL Server es un mecanismo que:
-        </p>
+        <p>Se usa para:</p>
         <ul>
-          <li>Registra <b>quién</b> realizó una acción (usuario o inicio de sesión).</li>
-          <li>Registra <b>qué</b> acción se ejecutó (INSERT, UPDATE, DELETE, SELECT, etc.).</li>
-          <li>Registra <b>cuándo</b> ocurrió la acción (fecha y hora).</li>
-          <li>Registra información adicional: instrucción ejecutada, base de datos, resultado, etc.</li>
+          <li>Cumplir normas de seguridad (ISO, GDPR, etc.).</li>
+          <li>Detectar intentos de eliminar o modificar datos.</li>
+          <li>Analizar incidentes o fallas.</li>
+          <li>Registrar accesos y errores de autenticación.</li>
         </ul>
+      </google-codelab-step>
 
-        <p><b>¿Para qué sirve auditar?</b></p>
-        <ul>
-          <li>Detectar accesos no autorizados o sospechosos sobre datos sensibles.</li>
-          <li>Dar soporte a <b>requerimientos de cumplimiento</b> (regulaciones, auditorías externas, etc.).</li>
-          <li>Analizar cambios hechos sobre datos críticos (pagos, inventario, socios, membresías, etc.).</li>
-          <li>Reconstruir el contexto de un incidente de seguridad o de un error humano.</li>
-        </ul>
+      <!-- 2. Componentes principales -->
+      <google-codelab-step label="Componentes principales" duration="0">
+        <p>SQL Server usa tres partes para realizar auditorías:</p>
 
-        <div class="important-box">
-          <p>
-            En esta práctica aprenderás a:
-            <b>crear auditorías a nivel de servidor (SERVER AUDIT)</b>, 
-            a <b>configurar especificaciones de auditoría a nivel de base de datos (DATABASE AUDIT SPECIFICATION)</b>
-            y a <b>consultar los eventos registrados</b> utilizando la función 
-            <code>sys.fn_get_audit_file</code>.
-          </p>
-        </div>
+        <table>
+  <thead>
+    <tr>
+      <th>Componente</th>
+      <th>Descripción</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Server Audit</strong></td>
+      <td>Define dónde se guardará la información (por ejemplo, en un archivo físico).</td>
+    </tr>
+    <tr>
+      <td><strong>Database Audit Specification</strong></td>
+      <td>Indica qué acciones o eventos se auditarán dentro de una base de datos.</td>
+    </tr>
+    <tr>
+      <td><strong>Audit Action</strong></td>
+      <td>Es la acción específica que se registrará (DELETE, ALTER TABLE, DENIED_ACCESS, etc.).</td>
+    </tr>
+  </tbody>
+</table>
 
         <p>
-          El objetivo es que al finalizar este laboratorio puedas aplicar estos conceptos
-          para resolver <b>cualquier variante</b> de los ejercicios propuestos 
-          (las “claves” del laboratorio).
+          El <b>Server Audit</b> recibe los eventos definidos en la <b>Database Audit Specification</b>,
+          que describe qué se debe auditar.
         </p>
       </google-codelab-step>
 
-      <!-- 2. Componentes de auditoría en SQL Server -->
-      <google-codelab-step label="Componentes de auditoría en SQL Server" duration="0">
+      <!-- 3. Creación del objeto de auditoría (Server Audit) -->
+      <google-codelab-step label="Creación del objeto de auditoría (Server Audit)" duration="0">
         <p>
-          La auditoría en SQL Server se basa en tres conceptos principales:
+          Primero se crea un objeto a nivel servidor que indica <b>dónde guardar los registros:</b>
         </p>
-
-        <h3>1. SERVER AUDIT</h3>
-        <p>
-          Es el objeto de auditoría a <b>nivel de servidor</b>.  
-          Define <b>dónde</b> se almacenarán los eventos (por ejemplo, en archivos 
-          <code>.sqlaudit</code> dentro de una carpeta específica) y con qué 
-          configuraciones (tamaño máximo, comportamiento ante fallos, etc.).
-        </p>
-
-        <ul>
-          <li>Se crea en la base de datos <b>master</b> o desde el contexto del servidor.</li>
-          <li>Puede escribir en archivo, Application Log o Security Log.</li>
-          <li>Debe estar en estado <b>ON</b> para comenzar a registrar eventos.</li>
-        </ul>
-
-        <h3>2. DATABASE AUDIT SPECIFICATION</h3>
-        <p>
-          Una <b>Database Audit Specification</b> se define dentro de una base de datos 
-          específica y está vinculada a un <b>SERVER AUDIT</b>.
-        </p>
-        <p>
-          Dentro de ella se configura:
-        </p>
-        <ul>
-          <li>Qué operaciones se auditan (INSERT, UPDATE, DELETE, SELECT, etc.).</li>
-          <li>Sobre qué objetos (tablas, vistas, etc.).</li>
-          <li>Para qué principales (PUBLIC, roles específicos, usuarios).</li>
-        </ul>
-
-        <h3>3. Flujo de la auditoría</h3>
-        <p>
-          A nivel conceptual, el flujo es:
-        </p>
-        <ol>
-          <li>Ocurre una acción (ej. un <code>INSERT</code> sobre una tabla específica).</li>
-          <li>La <b>Database Audit Specification</b> detecta que esa acción coincide con sus reglas.</li>
-          <li>La acción se envía al <b>SERVER AUDIT</b> configurado.</li>
-          <li>El <b>SERVER AUDIT</b> escribe el evento en el destino (archivo <code>.sqlaudit</code>).</li>
-          <li>Luego se consultan esos archivos con <code>sys.fn_get_audit_file</code>.</li>
-        </ol>
-
-        <div class="important-box">
-          <p>
-            En otras palabras, la <b>Database Audit Specification</b> define 
-            <b>qué</b> se audita y <b>para quién</b>, mientras que el 
-            <b>SERVER AUDIT</b> define <b>dónde</b> se guardan los eventos 
-            y con qué configuración.
-          </p>
-        </div>
-
-        <h3>Vistas útiles para verificar auditorías</h3>
-        <p>Puedes usar las siguientes consultas para inspeccionar los objetos de auditoría configurados:</p>
 
         <div class="code-container">
           <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
-<pre><code class="language-sql">-- Auditorías a nivel de servidor
-SELECT * 
-FROM sys.server_audits;
-
--- Especificaciones de auditoría a nivel de base
-SELECT * 
-FROM sys.database_audit_specifications;
-
--- Estado de las auditorías en ejecución
-SELECT * 
-FROM sys.dm_server_audit_status;</code></pre>
+<pre><code class="language-sql">
+USE master;
+CREATE SERVER AUDIT Audit_Gimnasio
+TO FILE (FILEPATH = 'C:\audits\', MAXSIZE = 50 MB, 
+ROLLOVER_ON_FILE_TARGET = ON)
+WITH (QUEUE_DELAY = 1000, ON_FAILURE = CONTINUE);
+ALTER SERVER AUDIT Audit_Gimnasio WITH (STATE = ON);
+</code></pre>
         </div>
+
+        <p>Explicación corta:</p>
+        <ul>
+          <li>FILEPATH: ruta donde se guardan los archivos.</li>
+          <li>MAXSIZE: tamaño máximo por archivo.</li>
+          <li>ROLLOVER_ON_FILE_TARGET: crea un nuevo archivo cuando se llena.</li>
+          <li>QUEUE_DELAY: tiempo antes de escribir los datos.</li>
+          <li>ON_FAILURE: qué hacer si hay error (en este caso, continuar).</li>
+          <li>STATE = ON: activa la auditoría.</li>
+        </ul>
       </google-codelab-step>
 
-      <!-- 3. Preparación de entorno -->
-      <google-codelab-step label="Preparación de entorno" duration="0">
+      <!-- 4. Auditoría a nivel de base de datos -->
+      <google-codelab-step label="Auditoría a nivel de base de datos" duration="0">
         <p>
-          Para este laboratorio utilizaremos la base de datos <b>DB_Gimnasio</b> 
-          y el esquema <b>ref</b> como entorno de ejemplo (el mismo que has 
-          usado en otros laboratorios).
+          Después se indica <b>qué evento auditar</b>. En este caso, los intentos de eliminar datos de <code>ref.Cliente</code>:
         </p>
 
-        <h3>1. Crear la base de datos y el esquema ref</h3>
         <div class="code-container">
           <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
-<pre><code class="language-sql">USE master;
-GO
-
-IF DB_ID('DB_Gimnasio') IS NULL
-BEGIN
-    CREATE DATABASE DB_Gimnasio;
-END
-GO
-
+<pre><code class="language-sql">
 USE DB_Gimnasio;
-GO
-
-IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE name = 'ref')
-BEGIN
-    EXEC('CREATE SCHEMA ref');
-END
-GO</code></pre>
+CREATE DATABASE AUDIT SPECIFICATION Audit_DB_Cliente
+FOR SERVER AUDIT Audit_Gimnasio
+ADD (DELETE ON OBJECT::ref.Cliente BY PUBLIC)
+WITH (STATE = ON);
+</code></pre>
         </div>
 
-        <h3>2. Crear carpeta de auditoría en el sistema de archivos</h3>
+        <p>En resumen:</p>
+        <ul>
+          <li>Se vincula al audit principal (<code>FOR SERVER AUDIT</code>).</li>
+          <li>Se audita cualquier <code>DELETE</code> en <code>ref.Cliente</code>.</li>
+          <li><code>STATE = ON</code> la activa.</li>
+        </ul>
+      </google-codelab-step>
+
+      <!-- 5. Prueba de la auditoría -->
+      <google-codelab-step label="Prueba de la auditoría" duration="0">
+        <p>Para probar, se ejecuta un <b>DELETE</b> cualquiera:</p>
+
+        <div class="code-container">
+          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+<pre><code class="language-sql">
+DELETE FROM ref.Cliente WHERE id = -1;
+</code></pre>
+        </div>
+
         <p>
-          En el equipo donde se ejecuta SQL Server, crea manualmente 
-          (desde el Explorador de archivos) la carpeta:
+          No importa si el registro existe o no, el intento quedará <b>registrado</b> en el archivo de auditoría.
+        </p>
+      </google-codelab-step>
+
+      <!-- 6. Ver los eventos auditados -->
+      <google-codelab-step label="Ver los eventos auditados" duration="0">
+        <p>Para revisar los registros:</p>
+
+        <div class="code-container">
+          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+<pre><code class="language-sql">
+SELECT * 
+FROM sys.fn_get_audit_file('C:\audits\*', DEFAULT, DEFAULT);
+</code></pre>
+        </div>
+
+        <p>Este comando muestra los datos de auditoría, como:</p>
+        <ul>
+          <li>Fecha y hora (<code>event_time</code>).</li>
+          <li>Usuario (<code>server_principal_name</code>).</li>
+          <li>Tipo de acción (<code>action_id</code>).</li>
+          <li>Objeto afectado (<code>object_name</code>).</li>
+          <li>Resultado (éxito o error).</li>
+        </ul>
+      </google-codelab-step>
+
+      <!-- 7. Buenas prácticas -->
+      <google-codelab-step label="Buenas prácticas" duration="0">
+        <ul>
+          <li>Guardar los archivos en carpetas con permisos limitados.</li>
+          <li>Limpiar o archivar logs antiguos.</li>
+          <li>No auditar todo (puede afectar el rendimiento).</li>
+          <li>Usar <b>Database Mail</b> o alertas para notificar eventos importantes.</li>
+        </ul>
+      </google-codelab-step>
+
+      <!-- 8. Conclusión -->
+      <google-codelab-step label="Conclusión" duration="0">
+        <p>
+          Las auditorías en SQL Server ayudan a <b>mantener la seguridad y el control</b> sobre las acciones dentro de la base de datos.
+          En este laboratorio se busca:
         </p>
         <ul>
-          <li><code>C:\audits_lab\</code></li>
+          <li>Crear una auditoría a nivel servidor.</li>
+          <li>Registrar acciones de tipo <code>DELETE</code>.</li>
+          <li>Verificar que los eventos se registren correctamente.</li>
+          <li>Explorar cómo auditar más eventos o enviar alertas automáticas.</li>
         </ul>
-
-        <p>
-          En los ejercicios específicos (claves), se indicarán rutas concretas para cada caso. 
-          La ruta <code>C:\audits_lab\</code> se usará aquí solo como <b>ejemplo genérico</b>.
-        </p>
-
-        <div class="important-box">
-          <p>
-            <b>Importante:</b> SQL Server debe tener permisos de escritura sobre la carpeta. 
-            Si obtienes errores al crear el SERVER AUDIT, verifica la ruta y los permisos 
-            del servicio de SQL Server.
-          </p>
-        </div>
       </google-codelab-step>
 
-      <!-- 4. Creación de un SERVER AUDIT -->
-      <google-codelab-step label="Creación de un SERVER AUDIT" duration="0">
-        <p>
-          El primer paso técnico para implementar auditorías es crear un <b>SERVER AUDIT</b>.  
-          A continuación se muestra un ejemplo base que puedes adaptar a distintas situaciones.
-        </p>
-
-        <h3>1. Sintaxis general</h3>
-        <div class="code-container">
-          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
-<pre><code class="language-sql">USE master;
-GO
-
-IF EXISTS (SELECT 1 FROM sys.server_audits WHERE name = 'Audit_LabDemo')
-BEGIN
-    ALTER SERVER AUDIT Audit_LabDemo WITH (STATE = OFF);
-    DROP SERVER AUDIT Audit_LabDemo;
-END
-GO
-
-CREATE SERVER AUDIT Audit_LabDemo
-TO FILE (
-    FILEPATH = 'C:\audits_lab\',   -- Carpeta donde se guardarán los .sqlaudit
-    MAXSIZE = 100 MB,              -- Tamaño máximo antes de crear un nuevo archivo
-    ROLLOVER_ON_FILE_TARGET = ON   -- Permite rollover automático
-)
-WITH (
-    QUEUE_DELAY = 1000,            -- Tiempo en ms antes de escribir en el archivo
-    ON_FAILURE = CONTINUE          -- Qué hacer si falla la auditoría
-);
-GO
-
-ALTER SERVER AUDIT Audit_LabDemo
-WITH (STATE = ON);
-GO</code></pre>
-        </div>
-
-        <h3>2. Propiedades importantes</h3>
-        <ul>
-          <li>
-            <b>FILEPATH:</b> Ruta donde se guardarán los archivos 
-            <code>.sqlaudit</code>. Debe existir y ser accesible por SQL Server.
-          </li>
-          <li>
-            <b>MAXSIZE:</b> Tamaño máximo de cada archivo de auditoría 
-            (ej. <code>20 MB</code>, <code>100 MB</code>, <code>200 MB</code>).
-          </li>
-          <li>
-            <b>ROLLOVER_ON_FILE_TARGET:</b> 
-            Si está en <b>ON</b>, cuando el archivo actual alcanza el tamaño máximo se crea uno nuevo.
-          </li>
-          <li>
-            <b>QUEUE_DELAY:</b> Cantidad de milisegundos que SQL Server puede esperar 
-            antes de escribir los eventos en disco para agruparlos.
-          </li>
-          <li>
-            <b>ON_FAILURE:</b> Indica el comportamiento si la auditoría falla:
-            <ul>
-              <li><b>CONTINUE:</b> El servidor sigue trabajando aunque falle la auditoría.</li>
-              <li><b>SHUTDOWN:</b> SQL Server se apaga si no puede registrar la auditoría (modo estricto).</li>
-            </ul>
-          </li>
-        </ul>
-
-        <div class="important-box">
-          <p>
-            En tu clave de laboratorio se te indicará el nombre del <code>SERVER AUDIT</code>, 
-            la ruta <code>FILEPATH</code> y los parámetros específicos que debes usar.  
-            Usa este ejemplo como <b>plantilla</b> para adaptar esos valores.
-          </p>
-        </div>
-      </google-codelab-step>
-
-      <!-- 5. Database Audit Specification -->
-      <google-codelab-step label="Database Audit Specification" duration="0">
-        <p>
-          Una vez que existe un <b>SERVER AUDIT</b>, el siguiente paso es crear una
-          <b>Database Audit Specification</b> en la base de datos objetivo, por ejemplo <b>DB_Gimnasio</b>.
-        </p>
-
-        <h3>1. Sintaxis básica para auditar una operación sobre una tabla</h3>
-        <p>
-          Supón que tienes una tabla <code>ref.TablaDemo</code> y un <code>SERVER AUDIT</code>
-          llamado <code>Audit_LabDemo</code>. Una especificación básica podría ser:
-        </p>
-
-        <div class="code-container">
-          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
-<pre><code class="language-sql">USE DB_Gimnasio;
-GO
-
-IF EXISTS (SELECT 1 FROM sys.database_audit_specifications 
-           WHERE name = 'Audit_DB_Demo')
-BEGIN
-    ALTER DATABASE AUDIT SPECIFICATION Audit_DB_Demo WITH (STATE = OFF);
-    DROP DATABASE AUDIT SPECIFICATION Audit_DB_Demo;
-END
-GO
-
-CREATE DATABASE AUDIT SPECIFICATION Audit_DB_Demo
-FOR SERVER AUDIT Audit_LabDemo
-ADD (INSERT ON OBJECT::ref.TablaDemo BY PUBLIC)
-WITH (STATE = ON);
-GO</code></pre>
-        </div>
-
-        <p>
-          Cambiando la acción (<code>INSERT</code>, <code>UPDATE</code>, 
-          <code>DELETE</code>, <code>SELECT</code>), el objeto y el principal 
-          (<code>PUBLIC</code>, un rol o usuario específico) puedes construir 
-          la auditoría que se te solicite en tu clave.
-        </p>
-
-        <h3>2. Cambiar acciones y principal</h3>
-
-        <div class="code-container">
-          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
-<pre><code class="language-sql">-- Ejemplo genérico de múltiples acciones
-CREATE DATABASE AUDIT SPECIFICATION Audit_DB_Demo
-FOR SERVER AUDIT Audit_LabDemo
-ADD (INSERT ON OBJECT::ref.TablaDemo BY PUBLIC),
-ADD (UPDATE ON OBJECT::ref.TablaDemo BY PUBLIC),
-ADD (DELETE ON OBJECT::ref.TablaDemo BY PUBLIC)
-WITH (STATE = ON);</code></pre>
-        </div>
-
-        <p>
-          Si quisieras auditar solo las acciones realizadas por un <b>rol</b> 
-          (por ejemplo, <code>RolAplicacion</code>), podrías usar:
-        </p>
-
-        <div class="code-container">
-          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
-<pre><code class="language-sql">CREATE DATABASE AUDIT SPECIFICATION Audit_DB_Demo
-FOR SERVER AUDIT Audit_LabDemo
-ADD (INSERT ON OBJECT::ref.TablaDemo BY [RolAplicacion])
-WITH (STATE = ON);</code></pre>
-        </div>
-
-        <h3>3. Activar y desactivar una Database Audit Specification</h3>
-        <p>Para activar o desactivar una especificación de auditoría existente:</p>
-
-        <div class="code-container">
-          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
-<pre><code class="language-sql">-- Desactivar
-ALTER DATABASE AUDIT SPECIFICATION Audit_DB_Demo
-WITH (STATE = OFF);
-GO
-
--- Activar
-ALTER DATABASE AUDIT SPECIFICATION Audit_DB_Demo
-WITH (STATE = ON);
-GO</code></pre>
-        </div>
-
-        <div class="important-box">
-          <p>
-            En las claves del laboratorio se te dirá exactamente qué operaciones 
-            auditar (INSERT, UPDATE, DELETE, SELECT), sobre qué tabla y para qué rol/usuario.  
-            Usa estas plantillas para construir tu propia especificación.
-          </p>
-        </div>
-      </google-codelab-step>
-
-      <!-- 6. Consultar eventos con sys.fn_get_audit_file -->
-      <google-codelab-step label="Consulta de eventos de auditoría" duration="0">
-        <p>
-          Una vez que el <b>SERVER AUDIT</b> y las <b>Database Audit Specifications</b> 
-          están en funcionamiento, los eventos se registran en archivos 
-          <code>.sqlaudit</code> dentro de las carpetas configuradas.
-        </p>
-
-        <p>
-          Para leer estos archivos utilizamos la función 
-          <code>sys.fn_get_audit_file</code>.
-        </p>
-
-        <h3>1. Lectura básica de auditoría</h3>
-
-        <div class="code-container">
-          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
-<pre><code class="language-sql">-- Lectura genérica desde C:\audits_lab\
-SELECT TOP 100 *
-FROM sys.fn_get_audit_file(
-        'C:\audits_lab\*.sqlaudit',  -- Ruta y patrón de archivos
-        DEFAULT,                     -- offset inicial
-        DEFAULT                      -- offset final
-     )
-ORDER BY event_time DESC;</code></pre>
-        </div>
-
-        <h3>2. Columnas importantes</h3>
-        <ul>
-          <li><b>event_time:</b> Fecha y hora del evento.</li>
-          <li><b>action_id:</b> Tipo de acción (por ejemplo, <code>IN</code> para INSERT, 
-              <code>UP</code> para UPDATE, <code>DL</code> para DELETE, <code>SL</code> para SELECT).</li>
-          <li><b>server_principal_name:</b> Inicio de sesión de servidor que ejecutó la acción.</li>
-          <li><b>database_principal_name:</b> Usuario de base de datos.</li>
-          <li><b>object_name:</b> Nombre del objeto afectado (tabla, vista, etc.).</li>
-          <li><b>statement:</b> Instrucción T-SQL que generó el evento (si está habilitado).</li>
-          <li><b>succeeded:</b> Indica si la operación fue exitosa (<code>1</code>) o falló (<code>0</code>).</li>
-        </ul>
-
-        <h3>3. Filtrar por tabla específica</h3>
-
-        <div class="code-container">
-          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
-<pre><code class="language-sql">-- Filtrar eventos asociados a una tabla específica (ej. BitacoraAcceso)
-SELECT event_time,
-       server_principal_name,
-       database_principal_name,
-       object_name,
-       action_id,
-       statement,
-       succeeded
-FROM sys.fn_get_audit_file('C:\audits_lab\*.sqlaudit', DEFAULT, DEFAULT)
-WHERE object_name = 'BitacoraAcceso'
-ORDER BY event_time DESC;</code></pre>
-        </div>
-
-        <div class="important-box">
-          <p>
-            En las claves de laboratorio deberás ajustar:
-          </p>
-          <ul>
-            <li>La ruta de los archivos (por ejemplo, <code>C:\audits_...\</code> indicada en tu enunciado).</li>
-            <li>El filtro por <code>object_name</code> para que coincida con la tabla que estás auditando.</li>
-          </ul>
-          <p>
-            La función <code>sys.fn_get_audit_file</code> es la misma; solo cambian 
-            la ruta y los filtros.
-          </p>
-        </div>
-      </google-codelab-step>
-
-      <!-- 7. Ejemplo práctico guiado (único) -->
-      <google-codelab-step label="Ejemplo práctico guiado" duration="0">
-        <p>
-          En esta sección veremos un <b>único ejemplo práctico completo</b> de auditoría
-          que te servirá como referencia.  
-          A partir de este patrón podrás construir las auditorías que se piden en tu clave.
-        </p>
-
-        <h3>Objetivo del ejemplo</h3>
-        <p>
-          Auditar las operaciones <b>INSERT</b> realizadas sobre una tabla 
-          de bitácora llamada <code>ref.BitacoraAcceso</code> en la base 
-          <code>DB_Gimnasio</code>, registrando los eventos en archivos 
-          dentro de <code>C:\audits_lab\</code>.
-        </p>
-
-        <h3>1. Crear la tabla de bitácora</h3>
-        <p>
-          La tabla <code>ref.BitacoraAcceso</code> simula una bitácora de registros 
-          de acceso a un sistema.
-        </p>
-
-        <div class="code-container">
-          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
-<pre><code class="language-sql">USE DB_Gimnasio;
-GO
-
-IF OBJECT_ID('ref.BitacoraAcceso') IS NOT NULL
-    DROP TABLE ref.BitacoraAcceso;
-GO
-
-CREATE TABLE ref.BitacoraAcceso (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    usuario VARCHAR(100) NOT NULL,
-    accion VARCHAR(100) NOT NULL,
-    fecha_hora DATETIME NOT NULL DEFAULT(GETDATE())
-);
-GO</code></pre>
-        </div>
-
-        <h3>2. Crear el SERVER AUDIT de ejemplo</h3>
-        <p>
-          Este SERVER AUDIT es genérico y almacena los eventos en 
-          <code>C:\audits_lab\</code>.
-        </p>
-
-        <div class="code-container">
-          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
-<pre><code class="language-sql">USE master;
-GO
-
-IF EXISTS (SELECT 1 FROM sys.server_audits WHERE name = 'Audit_LabDemo')
-BEGIN
-    ALTER SERVER AUDIT Audit_LabDemo WITH (STATE = OFF);
-    DROP SERVER AUDIT Audit_LabDemo;
-END
-GO
-
-CREATE SERVER AUDIT Audit_LabDemo
-TO FILE (
-    FILEPATH = 'C:\audits_lab\',
-    MAXSIZE = 100 MB,
-    ROLLOVER_ON_FILE_TARGET = ON
-)
-WITH (
-    QUEUE_DELAY = 1000,
-    ON_FAILURE = CONTINUE
-);
-GO
-
-ALTER SERVER AUDIT Audit_LabDemo
-WITH (STATE = ON);
-GO</code></pre>
-        </div>
-
-        <h3>3. Crear la Database Audit Specification para la bitácora</h3>
-        <p>
-          Auditará los <b>INSERT</b> sobre <code>ref.BitacoraAcceso</code> para 
-          cualquier usuario (<code>PUBLIC</code>).
-        </p>
-
-        <div class="code-container">
-          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
-<pre><code class="language-sql">USE DB_Gimnasio;
-GO
-
-IF EXISTS (SELECT 1 FROM sys.database_audit_specifications 
-           WHERE name = 'Audit_DB_Bitacora')
-BEGIN
-    ALTER DATABASE AUDIT SPECIFICATION Audit_DB_Bitacora WITH (STATE = OFF);
-    DROP DATABASE AUDIT SPECIFICATION Audit_DB_Bitacora;
-END
-GO
-
-CREATE DATABASE AUDIT SPECIFICATION Audit_DB_Bitacora
-FOR SERVER AUDIT Audit_LabDemo
-ADD (INSERT ON OBJECT::ref.BitacoraAcceso BY PUBLIC)
-WITH (STATE = ON);
-GO</code></pre>
-        </div>
-
-        <h3>4. Realizar INSERT de prueba</h3>
-        <p>
-          Ahora insertamos algunos registros en la bitácora para generar eventos de auditoría.
-        </p>
-
-        <div class="code-container">
-          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
-<pre><code class="language-sql">USE DB_Gimnasio;
-GO
-
-INSERT INTO ref.BitacoraAcceso (usuario, accion)
-VALUES ('demo_user', 'Inicio de sesión'),
-       ('demo_user', 'Consulta de reportes'),
-       ('otro_user', 'Actualización de perfil');
-
-SELECT * FROM ref.BitacoraAcceso;</code></pre>
-        </div>
-
-        <h3>5. Consultar registros en el archivo de auditoría</h3>
-        <p>
-          Finalmente, usamos <code>sys.fn_get_audit_file</code> para confirmar 
-          que las operaciones <code>INSERT</code> quedaron registradas.
-        </p>
-
-        <div class="code-container">
-          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
-<pre><code class="language-sql">SELECT TOP 50
-       event_time,
-       server_principal_name,
-       database_principal_name,
-       object_name,
-       action_id,
-       statement,
-       succeeded
-FROM sys.fn_get_audit_file('C:\audits_lab\*.sqlaudit', DEFAULT, DEFAULT)
-WHERE object_name = 'BitacoraAcceso'
-ORDER BY event_time DESC;</code></pre>
-        </div>
-
-        <div class="important-box">
-          <p>
-            <b>Resultado esperado:</b> deberás ver eventos cuya columna 
-            <code>object_name</code> sea <b>BitacoraAcceso</b> y el 
-            <code>action_id</code> corresponda a la operación auditada 
-            (por ejemplo, <code>IN</code> para INSERT).  
-            En la columna <code>statement</code> podrás observar el T-SQL ejecutado.
-          </p>
-          <p>
-            Para tu clave, deberás cambiar:
-          </p>
-          <ul>
-            <li>El nombre de la tabla (según el enunciado).</li>
-            <li>El nombre del SERVER AUDIT y la ruta de archivo.</li>
-            <li>Las acciones auditadas (INSERT, UPDATE, DELETE, SELECT).</li>
-            <li>El principal (<code>PUBLIC</code>, rol específico o usuario).</li>
-          </ul>
-        </div>
-      </google-codelab-step>
-
-      <!-- 8. Ejercicio Propuesto -->
-      <google-codelab-step duration="0" label="Ejercicio Propuesto">
-        <p>
-          Utiliza los conceptos y el ejemplo práctico de esta guía para completar la práctica 
-          de <b>Auditoría en SQL Server</b>.
-        </p>
-
-        <p>
-          En el documento de <b>Claves Laboratorio 6</b> se presentan diferentes 
-          escenarios (A, B, C, D y E) que incluyen combinaciones de:
-        </p>
-        <ul>
-          <li>Distintas tablas dentro de la base <b>DB_Gimnasio</b>.</li>
-          <li>Operaciones específicas a auditar (INSERT, UPDATE, DELETE, SELECT).</li>
-          <li>Configuraciones particulares de <b>SERVER AUDIT</b> (rutas, MAXSIZE, ON_FAILURE, etc.).</li>
-          <li>Auditoría para todos los usuarios (<code>PUBLIC</code>) o solo para ciertos roles.</li>
-        </ul>
-
-        <div class="important-box">
-          <p>
-            <b>Entrega requerida:</b>  
-            Para tu clave asignada, deberás entregar:
-          </p>
-          <ul>
-            <li>Un archivo <code>.sql</code> con todas las instrucciones utilizadas:
-              creación del SERVER AUDIT, Database Audit Specification, tablas, 
-              pruebas (INSERT/UPDATE/DELETE/SELECT) y consultas a 
-              <code>sys.fn_get_audit_file</code>.
-            </li>
-            <li>Un archivo <b>PDF</b> con capturas de pantalla del proceso y de los 
-              resultados, acompañadas de explicaciones breves y claras de cada paso.</li>
-          </ul>
-          <p>
-            Asegúrate de nombrar los archivos según las instrucciones proporcionadas
-            por el docente.
-          </p>
-        </div>
-      </google-codelab-step>
-
-      <!-- 9. Créditos -->
-      <google-codelab-step duration="0" label="Créditos">
+      <!-- Créditos -->
+    <google-codelab-step label="Créditos" duration="0">
         <p>
           Departamento de Electrónica e Informática, Universidad Centroamericana
           José Simeón Cañas, La Libertad, El Salvador.
@@ -651,7 +221,7 @@ ORDER BY event_time DESC;</code></pre>
             <tr>
               <td>1</td>
               <td>
-                Diego Eduardo Castro Quintanilla (00117322@uca.edu.sv)
+                Vanessa Sarai Duran Cruz (00025822@uca.edu.sv), Diego Eduardo Castro Quintanilla (00117322@uca.edu.sv), Claudia María Chávez Grande (00037221@uca.edu.sv) 
               </td>
             </tr>
           </tbody>
@@ -670,9 +240,11 @@ ORDER BY event_time DESC;</code></pre>
             International License </a
           >.
         </p>
-      </google-codelab-step>
+        </google-codelab-step>
+
     </google-codelab>
 
+    <!-- Codelab Scripts -->
     <script src="https://storage.googleapis.com/claat-public/native-shim.js"></script>
     <script src="https://storage.googleapis.com/claat-public/custom-elements.min.js"></script>
     <script src="https://storage.googleapis.com/claat-public/prettify.js"></script>
